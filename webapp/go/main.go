@@ -2216,6 +2216,10 @@ func postSell(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tx.Commit()
+	userMapMux.Lock()
+	userMap[seller.ID].NumSellItems++
+	userMap[seller.ID].LastBump = now
+	userMapMux.Unlock()
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	json.NewEncoder(w).Encode(resSell{ID: itemID})
@@ -2471,6 +2475,8 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 		AccountName: accountName,
 		Address:     address,
 	}
+
+	getUserSimpleByID(dbx, userID)
 
 	session := getSession(r)
 	session.Values["user_id"] = u.ID
