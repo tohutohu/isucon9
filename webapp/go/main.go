@@ -405,6 +405,7 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 
 	userMapMux.RLock()
 	if val, ok := userMap[userID.(int64)]; ok {
+		userMapMux.RUnlock()
 		return *val, http.StatusOK, ""
 	}
 	userMapMux.RUnlock()
