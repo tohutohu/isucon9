@@ -62,6 +62,19 @@ name = "stylesheets"
 regexp = '^(GET|HEAD) /images/'
 name = "images"
 
+
+[[bundle]]
+regexp = '^(GET|HEAD) /new_items/[0-9]+.json'
+name = "new_items"
+
+[[bundle]]
+regexp = '^(GET|HEAD) /users/[0-9]+.json'
+name = "users/num.json"
+
+[[bundle]]
+regexp = '^(GET|HEAD) /users/transactions.json'
+name = "users/transactions.json"
+
 # You can replace the part of urls which matched to your regular expressions.
 # For overview of regexp syntax: https://golang.org/pkg/regexp/syntax/
 [[replace]]

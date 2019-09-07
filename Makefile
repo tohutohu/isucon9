@@ -58,7 +58,7 @@ dev: build
 bench-dev: commit before slow-on dev
 
 .PHONY: bench
-bench: commit before slow-on build restart
+bench: commit before slow-on build restart log
 
 .PHONY: log
 log: 
