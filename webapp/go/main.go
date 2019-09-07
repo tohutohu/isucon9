@@ -437,13 +437,6 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 		return user, http.StatusNotFound, "no session"
 	}
 
-	// userMapMux.RLock()
-	// if val, ok := userMap[userID.(int64)]; ok {
-	// 	userMapMux.RUnlock()
-	// 	return *val, http.StatusOK, ""
-	// }
-	// userMapMux.RUnlock()
-
 	err := dbx.Get(&user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err == sql.ErrNoRows {
 		return user, http.StatusNotFound, "user not found"
@@ -452,10 +445,6 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 		log.Print(err)
 		return user, http.StatusInternalServerError, "db error"
 	}
-	// userMapMux.Lock()
-	// defer userMapMux.Unlock()
-	// userMap[userID.(int64)] = &user
-
 	return user, http.StatusOK, ""
 }
 
@@ -466,7 +455,6 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 	if err != nil {
 		return userSimple, err
 	}
-	userMapMux.Lock()
 	userSimple.ID = user.ID
 	userSimple.NumSellItems = user.NumSellItems
 	userSimple.AccountName = user.AccountName
@@ -482,6 +470,7 @@ func getUserImutableFromRequest(r *http.Request) (user *User, errCode int, errMs
 
 	userMapMux.RLock()
 	if val, ok := userMap[userID.(int64)]; ok {
+		userMapMux.RUnlock()
 		return val, http.StatusOK, ""
 	}
 	userMapMux.RUnlock()
@@ -499,6 +488,7 @@ func getUserImutableFromRequest(r *http.Request) (user *User, errCode int, errMs
 func getUserImutable(userID int64) (user *User, err error) {
 	userMapMux.RLock()
 	if val, ok := userMap[userID]; ok {
+		userMapMux.RUnlock()
 		return val, err
 	}
 	userMapMux.RUnlock()
