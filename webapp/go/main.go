@@ -499,7 +499,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 
 	categoryList = make(map[int]*Category)
 	cateArr := []*Category{}
-	err = dbx.Select(&cateArr, "SELECT * FROM category")
+	err = dbx.Select(&cateArr, "SELECT * FROM categories")
 	if err != nil {
 		log.Print(err)
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
