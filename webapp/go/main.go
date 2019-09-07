@@ -439,7 +439,8 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 
 	userMapMux.RLock()
 	if val, ok := userMap[userID.(int64)]; ok {
-		return *val, err
+		userMapMux.RUnlock()
+		return *val, http.StatusOK, ""
 	}
 	userMapMux.RUnlock()
 
@@ -470,12 +471,12 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 	}
 	userMapMux.RUnlock()
 
-	userMapMux.Lock()
-	defer userMapMux.Unlock()
 	err = sqlx.Get(q, &user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return userSimple, err
 	}
+	userMapMux.Lock()
+	defer userMapMux.Unlock()
 	userMap[user.ID] = &user
 	userSimple.ID = user.ID
 	userSimple.AccountName = user.AccountName
