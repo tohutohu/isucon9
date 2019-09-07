@@ -508,9 +508,15 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 	return userSimple, err
 }
 
-func getCategoryByID(q sqlx.Queryer, categoryID int) (category Category, err error) {
-	category = *categoryList[categoryID]
-
+func getCategoryByID(q sqlx.Queryer, categoryID int) (category *Category, err error) {
+	category, ok := categoryList[categoryID]
+	if !ok {
+		err = dbx.Get(category, "SELECT * FROM categories WHERE id = ?", categoryID)
+		if err != nil {
+			return nil, err
+		}
+		return category, nil
+	}
 	return category, err
 }
 
