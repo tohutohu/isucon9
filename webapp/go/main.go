@@ -461,26 +461,24 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 
 func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err error) {
 	user := User{}
-	// userMapMux.RLock()
-	// if val, ok := userMap[userID]; ok {
-	// 	userSimple.ID = val.ID
-	// 	userSimple.AccountName = val.AccountName
-	// 	userSimple.NumSellItems = val.NumSellItems
-	// 	userMapMux.RUnlock()
-	// 	return userSimple, err
-	// }
-	// userMapMux.RUnlock()
+	userMapMux.RLock()
+	if val, ok := userMap[userID]; ok {
+		userSimple.ID = val.ID
+		userSimple.AccountName = val.AccountName
+		userMapMux.RUnlock()
+		return userSimple, err
+	}
+	userMapMux.RUnlock()
 
 	err = sqlx.Get(q, &user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return userSimple, err
 	}
-	// userMapMux.Lock()
-	// defer userMapMux.Unlock()
-	// userMap[user.ID] = &user
+	userMapMux.Lock()
+	defer userMapMux.Unlock()
+	userMap[user.ID] = &user
 	userSimple.ID = user.ID
 	userSimple.AccountName = user.AccountName
-	userSimple.NumSellItems = user.NumSellItems
 	return userSimple, err
 }
 
@@ -2248,10 +2246,9 @@ func postSell(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tx.Commit()
-	userMapMux.Lock()
-	userMap[seller.ID].NumSellItems++
-	userMap[seller.ID].LastBump = now
-	userMapMux.Unlock()
+	// userMapMux.Lock()
+	// userMap[seller.ID].LastBump = now
+	// userMapMux.Unlock()
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	json.NewEncoder(w).Encode(resSell{ID: itemID})
@@ -2361,9 +2358,9 @@ func postBump(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tx.Commit()
-	userMapMux.Lock()
-	userMap[seller.ID].LastBump = now
-	userMapMux.Unlock()
+	// userMapMux.Lock()
+	// userMap[seller.ID].LastBump = now
+	// userMapMux.Unlock()
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	json.NewEncoder(w).Encode(&resItemEdit{
