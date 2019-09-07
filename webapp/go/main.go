@@ -902,12 +902,12 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	tx := dbx.MustBegin()
+	//tx := dbx.MustBegin()
 	// items := []Item{}
 	var rows *sqlx.Rows
 	if itemID > 0 && createdAt > 0 {
 		// paging
-		rows, err = tx.Queryx(
+		rows, err = dbx.Queryx(
 			`SELECT 
 	items.id, 
 	items.seller_id, 
@@ -956,7 +956,7 @@ ORDER BY
 		}
 	} else {
 		// 1st page
-		rows, err = tx.Queryx(
+		rows, err = dbx.Queryx(
 			`SELECT 
 	items.id, 
 	items.seller_id, 
