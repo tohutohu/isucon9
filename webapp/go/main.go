@@ -287,7 +287,7 @@ func init() {
 }
 
 func main() {
-	http.DefaultMaxIdleConnsPerHost = 1000
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 1000
 	host := os.Getenv("MYSQL_HOST")
 	if host == "" {
 		host = "127.0.0.1"
