@@ -437,6 +437,12 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 		return user, http.StatusNotFound, "no session"
 	}
 
+	userMapMux.RLock()
+	if val, ok := userMap[userID.(int64)]; ok {
+		return *val, err
+	}
+	userMapMux.RUnlock()
+
 	err := dbx.Get(&user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err == sql.ErrNoRows {
 		return user, http.StatusNotFound, "user not found"
@@ -445,84 +451,39 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 		log.Print(err)
 		return user, http.StatusInternalServerError, "db error"
 	}
+	userMapMux.Lock()
+	defer userMapMux.Unlock()
+	userMap[userID.(int64)] = &user
+
 	return user, http.StatusOK, ""
 }
 
 func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err error) {
 	user := User{}
+	userMapMux.RLock()
+	if val, ok := userMap[userID]; ok {
+		userSimple.ID = val.ID
+		userSimple.AccountName = val.AccountName
+		userSimple.NumSellItems = val.NumSellItems
+		userMapMux.RUnlock()
+		return userSimple, err
+	}
+	userMapMux.RUnlock()
 
+	userMapMux.Lock()
+	defer userMapMux.Unlock()
 	err = sqlx.Get(q, &user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return userSimple, err
 	}
+	userMap[user.ID] = &user
 	userSimple.ID = user.ID
-	userSimple.NumSellItems = user.NumSellItems
 	userSimple.AccountName = user.AccountName
-	return userSimple, err
-}
-
-func getUserImutableFromRequest(r *http.Request) (user *User, errCode int, errMsg string) {
-	session := getSession(r)
-	userID, ok := session.Values["user_id"]
-	if !ok {
-		return user, http.StatusNotFound, "no session"
-	}
-
-	userMapMux.RLock()
-	if val, ok := userMap[userID.(int64)]; ok {
-		userMapMux.RUnlock()
-		return val, http.StatusOK, ""
-	}
-	userMapMux.RUnlock()
-
-	err := dbx.Get(user, "SELECT * FROM `users` WHERE `id` = ?", userID)
-	if err != nil {
-		return user, http.StatusInternalServerError, err.Error()
-	}
-	userMapMux.Lock()
-	defer userMapMux.Unlock()
-	userMap[user.ID] = user
-	return user, http.StatusInternalServerError, err.Error()
-}
-
-func getUserImutable(userID int64) (user *User, err error) {
-	userMapMux.RLock()
-	if val, ok := userMap[userID]; ok {
-		userMapMux.RUnlock()
-		return val, err
-	}
-	userMapMux.RUnlock()
-
-	err = dbx.Get(user, "SELECT * FROM `users` WHERE `id` = ?", userID)
-	if err != nil {
-		return user, err
-	}
-	userMapMux.Lock()
-	defer userMapMux.Unlock()
-	userMap[user.ID] = user
-	return user, err
-}
-
-func getUserSimpleImutableByID(userID int64) (userSimple UserSimple, err error) {
-	user, err := getUserImutable(userID)
-	if err != nil {
-		return userSimple, err
-	}
-	userSimple.ID = user.ID
 	userSimple.NumSellItems = user.NumSellItems
-	userSimple.AccountName = user.AccountName
 	return userSimple, err
 }
 
 func getCategoryByID(q sqlx.Queryer, categoryID int) (category Category, err error) {
-	// err = sqlx.Get(q, &category, "SELECT * FROM `categories` WHERE `id` = ?", categoryID)
-	// if category.ParentID != 0 {
-	// 	parentCategory, err := getCategoryByID(q, category.ParentID)
-	// 	if err != nil {
-	// 		return category, err
-	// 	}
-	// 	category.ParentCategoryName = parentCategory.CategoryName
-	// }
 	category = *categoryList[categoryID]
 
 	return category, err
@@ -2278,9 +2239,10 @@ func postSell(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tx.Commit()
-	// userMapMux.Lock()
-	// userMap[seller.ID].LastBump = now
-	// userMapMux.Unlock()
+	userMapMux.Lock()
+	userMap[seller.ID].LastBump = now
+	userMap[seller.ID].NumSellItems++
+	userMapMux.Unlock()
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	json.NewEncoder(w).Encode(resSell{ID: itemID})
