@@ -60,6 +60,10 @@ bench-dev: commit before slow-on dev
 .PHONY: bench
 bench: commit before slow-on build restart
 
+.PHONY: log
+log: 
+	sudo journalctl -u isucari.golang -n10 -f
+
 .PHONY: maji
 bench: commit before build restart
 
