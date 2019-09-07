@@ -400,7 +400,7 @@ func shutdown(listener net.Listener) {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		s := <-c
+		<-c
 		if err := listener.Close(); err != nil {
 			log.Printf("error: %v", err)
 		}
