@@ -940,7 +940,7 @@ WHERE
 	(seller_id = ? OR buyer_id = ?) 
 	AND (created_at < ?  OR (created_at <= ? AND id < ?)) 
 ORDER BY 
-	created_at DESC, id DESC LIMIT ?`,
+	created_at DESC, items.id DESC LIMIT ?`,
 			user.ID,
 			user.ID,
 			time.Unix(createdAt, 0),
@@ -987,7 +987,7 @@ LEFT JOIN
 	) AS te_ship ON items.id = te_ship.item_id 
 WHERE 
 	(seller_id = ? OR buyer_id = ?) 
-ORDER BY created_at DESC, id DESC LIMIT ?`,
+ORDER BY created_at DESC, items.id DESC LIMIT ?`,
 			user.ID,
 			user.ID,
 			TransactionsPerPage+1,
