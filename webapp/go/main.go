@@ -562,7 +562,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, _ := json.Marshal(ri)
-	req, err := http.NewRequest(http.MethodPost, "http://172.24.139.27/light", bytes.NewBuffer(b))
+	req, err := http.NewRequest(http.MethodPost, "http://172.24.139.27:8000/light", bytes.NewBuffer(b))
 	if err != nil {
 		log.Print(err)
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
@@ -570,13 +570,13 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	res, err := http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Print(err)
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
 		return
 	}
-	defer res.Body.Close()
+	defer resp.Body.Close()
 
 	res := resInitialize{
 		// キャンペーン実施時には還元率の設定を返す。詳しくはマニュアルを参照のこと。
