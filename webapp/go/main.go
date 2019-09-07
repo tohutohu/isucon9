@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	crand "crypto/rand"
 	"database/sql"
 	"encoding/json"
@@ -338,6 +339,7 @@ func main() {
 
 	// API
 	mux.HandleFunc(pat.Post("/initialize"), postInitialize)
+	mux.HandleFunc(pat.Post("/light"), postInitializeOther)
 	mux.HandleFunc(pat.Get("/new_items.json"), getNewItems)
 	mux.HandleFunc(pat.Get("/new_items/:root_category_id.json"), getNewCategoryItems)
 	mux.HandleFunc(pat.Get("/users/transactions.json"), getTransactions)
@@ -403,12 +405,12 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 		return user, http.StatusNotFound, "no session"
 	}
 
-	userMapMux.RLock()
-	if val, ok := userMap[userID.(int64)]; ok {
-		userMapMux.RUnlock()
-		return *val, http.StatusOK, ""
-	}
-	userMapMux.RUnlock()
+	// userMapMux.RLock()
+	// if val, ok := userMap[userID.(int64)]; ok {
+	// 	userMapMux.RUnlock()
+	// 	return *val, http.StatusOK, ""
+	// }
+	// userMapMux.RUnlock()
 
 	err := dbx.Get(&user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err == sql.ErrNoRows {
@@ -418,32 +420,32 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 		log.Print(err)
 		return user, http.StatusInternalServerError, "db error"
 	}
-	userMapMux.Lock()
-	defer userMapMux.Unlock()
-	userMap[userID.(int64)] = &user
+	// userMapMux.Lock()
+	// defer userMapMux.Unlock()
+	// userMap[userID.(int64)] = &user
 
 	return user, http.StatusOK, ""
 }
 
 func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err error) {
 	user := User{}
-	userMapMux.RLock()
-	if val, ok := userMap[userID]; ok {
-		userSimple.ID = val.ID
-		userSimple.AccountName = val.AccountName
-		userSimple.NumSellItems = val.NumSellItems
-		userMapMux.RUnlock()
-		return userSimple, err
-	}
-	userMapMux.RUnlock()
+	// userMapMux.RLock()
+	// if val, ok := userMap[userID]; ok {
+	// 	userSimple.ID = val.ID
+	// 	userSimple.AccountName = val.AccountName
+	// 	userSimple.NumSellItems = val.NumSellItems
+	// 	userMapMux.RUnlock()
+	// 	return userSimple, err
+	// }
+	// userMapMux.RUnlock()
 
-	userMapMux.Lock()
-	defer userMapMux.Unlock()
 	err = sqlx.Get(q, &user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return userSimple, err
 	}
-	userMap[user.ID] = &user
+	// userMapMux.Lock()
+	// defer userMapMux.Unlock()
+	// userMap[user.ID] = &user
 	userSimple.ID = user.ID
 	userSimple.AccountName = user.AccountName
 	userSimple.NumSellItems = user.NumSellItems
@@ -517,6 +519,80 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	cmd.Run()
 	if err != nil {
 		outputErrorMsg(w, http.StatusInternalServerError, "exec init.sh error")
+		return
+	}
+
+	config["payment_service_url"] = ri.PaymentServiceURL
+	config["shipment_service_url"] = ri.ShipmentServiceURL
+
+	categoryList = make(map[int]*Category)
+	cateArr := []*Category{}
+	err = dbx.Select(&cateArr, "SELECT * FROM categories")
+	if err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		return
+	}
+
+	for _, cate := range cateArr {
+		categoryList[cate.ID] = cate
+	}
+
+	for _, cate := range categoryList {
+		if cate.ParentID != 0 {
+			cate.ParentCategoryName = categoryList[cate.ParentID].CategoryName
+		}
+	}
+
+	userMapMux.Lock()
+	defer userMapMux.Unlock()
+
+	userMap = make(map[int64]*User)
+	userArr := []*User{}
+	err = dbx.Select(&userArr, "SELECT * FROM users")
+
+	if err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		return
+	}
+
+	for _, user := range userArr {
+		userMap[user.ID] = user
+	}
+
+	b, _ := json.Marshal(ri)
+	req, err := http.NewRequest(http.MethodPost, "http://172.24.139.27/light", bytes.NewBuffer(b))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		return
+	}
+	defer res.Body.Close()
+
+	res := resInitialize{
+		// キャンペーン実施時には還元率の設定を返す。詳しくはマニュアルを参照のこと。
+		Campaign: 4,
+		// 実装言語を返す
+		Language: "Go",
+	}
+
+	w.Header().Set("Content-Type", "application/json;charset=utf-8")
+	json.NewEncoder(w).Encode(res)
+}
+
+func postInitializeOther(w http.ResponseWriter, r *http.Request) {
+	ri := reqInitialize{}
+
+	err := json.NewDecoder(r.Body).Decode(&ri)
+	if err != nil {
+		outputErrorMsg(w, http.StatusBadRequest, "json decode error")
 		return
 	}
 

@@ -58,7 +58,7 @@ dev: build
 bench-dev: commit before slow-on dev
 
 .PHONY: bench
-bench: commit before slow-on build restart log
+bench: commit push before build restart log
 
 .PHONY: log
 log: 
@@ -69,6 +69,10 @@ bench: commit before build restart
 
 .PHONY: anal
 anal: slow kataru
+
+.PHONY: push
+push: 
+	git push
 
 .PHONY: commit
 commit:
