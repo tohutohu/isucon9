@@ -68,7 +68,8 @@ CREATE TABLE `shippings` (
   `from_name` varchar(191) NOT NULL,
   `img_binary` mediumblob NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_item_id (`item_id`)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4;
 
 DROP TABLE IF EXISTS `categories`;
