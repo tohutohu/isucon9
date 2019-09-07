@@ -1,8 +1,8 @@
 DB_HOST:=127.0.0.1
 DB_PORT:=3306
-DB_USER:=isucon
-DB_PASS:=isucon
-DB_NAME:=isucon
+DB_USER:=isucari
+DB_PASS:=isucari
+DB_NAME:=isucari
 
 MYSQL_CMD:=mysql -h$(DB_HOST) -P$(DB_PORT) -u$(DB_USER) -p$(DB_PASS) $(DB_NAME)
 
