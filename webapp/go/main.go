@@ -1783,9 +1783,10 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = tx.Exec("UPDATE `shippings` SET `status` = ?, `img_binary` = ?, `updated_at` = ? WHERE `transaction_evidence_id` = ?",
+	_, err = tx.Exec("UPDATE `shippings` SET `status` = ? `updated_at` = ? WHERE `transaction_evidence_id` = ?",
+		// _, err = tx.Exec("UPDATE `shippings` SET `status` = ?, `img_binary` = ?, `updated_at` = ? WHERE `transaction_evidence_id` = ?",
 		ShippingsStatusWaitPickup,
-		img,
+		// img,
 		time.Now(),
 		transactionEvidence.ID,
 	)
@@ -1793,6 +1794,14 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 		log.Print(err)
 
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		tx.Rollback()
+		return
+	}
+
+	err = ioutil.WriteFile(fmt.Sprintf("../public/transactions/%d.png"), img, 0644)
+	if err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "write file error")
 		tx.Rollback()
 		return
 	}
