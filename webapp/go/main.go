@@ -408,14 +408,16 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 }
 
 func getCategoryByID(q sqlx.Queryer, categoryID int) (category Category, err error) {
-	err = sqlx.Get(q, &category, "SELECT * FROM `categories` WHERE `id` = ?", categoryID)
-	if category.ParentID != 0 {
-		parentCategory, err := getCategoryByID(q, category.ParentID)
-		if err != nil {
-			return category, err
-		}
-		category.ParentCategoryName = parentCategory.CategoryName
-	}
+	// err = sqlx.Get(q, &category, "SELECT * FROM `categories` WHERE `id` = ?", categoryID)
+	// if category.ParentID != 0 {
+	// 	parentCategory, err := getCategoryByID(q, category.ParentID)
+	// 	if err != nil {
+	// 		return category, err
+	// 	}
+	// 	category.ParentCategoryName = parentCategory.CategoryName
+	// }
+	category = *categoryList[categoryID]
+
 	return category, err
 }
 
@@ -451,6 +453,10 @@ func getShipmentServiceURL() string {
 func getIndex(w http.ResponseWriter, r *http.Request) {
 	templates.ExecuteTemplate(w, "index.html", struct{}{})
 }
+
+var (
+	categoryList = make(map[int]*Category)
+)
 
 func postInitialize(w http.ResponseWriter, r *http.Request) {
 	ri := reqInitialize{}
@@ -489,6 +495,25 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		log.Print(err)
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
 		return
+	}
+
+	categoryList = make(map[int]*Category)
+	cateArr := []*Category{}
+	err = dbx.Select(&cateArr, "SELECT * FROM category")
+	if err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		return
+	}
+
+	for _, cate := range cateArr {
+		categoryList[cate.ID] = cate
+	}
+
+	for _, cate := range categoryList {
+		if cate.ParentID != 0 {
+			cate.ParentCategoryName = categoryList[cate.ParentID].CategoryName
+		}
 	}
 
 	res := resInitialize{
@@ -873,14 +898,8 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 		// paging
 		err := tx.Select(&items,
 			"SELECT * FROM `items` WHERE (`seller_id` = ? OR `buyer_id` = ?) AND (`created_at` < ?  OR (`created_at` <= ? AND `id` < ?)) ORDER BY `created_at` DESC, `id` DESC LIMIT ?",
-			// "SELECT * FROM `items` WHERE (`seller_id` = ? OR `buyer_id` = ?) AND `status` IN (?,?,?,?,?) AND (`created_at` < ?  OR (`created_at` <= ? AND `id` < ?)) ORDER BY `created_at` DESC, `id` DESC LIMIT ?",
 			user.ID,
 			user.ID,
-			// ItemStatusOnSale,
-			// ItemStatusTrading,
-			// ItemStatusSoldOut,
-			// ItemStatusCancel,
-			// ItemStatusStop,
 			time.Unix(createdAt, 0),
 			time.Unix(createdAt, 0),
 			itemID,
@@ -895,14 +914,9 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// 1st page
 		err := tx.Select(&items,
-			"SELECT * FROM `items` WHERE (`seller_id` = ? OR `buyer_id` = ?) AND `status` IN (?,?,?,?,?) ORDER BY `created_at` DESC, `id` DESC LIMIT ?",
+			"SELECT * FROM `items` WHERE (`seller_id` = ? OR `buyer_id` = ?) ORDER BY `created_at` DESC, `id` DESC LIMIT ?",
 			user.ID,
 			user.ID,
-			ItemStatusOnSale,
-			ItemStatusTrading,
-			ItemStatusSoldOut,
-			ItemStatusCancel,
-			ItemStatusStop,
 			TransactionsPerPage+1,
 		)
 		if err != nil {
