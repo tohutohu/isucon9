@@ -1116,7 +1116,7 @@ ORDER BY created_at DESC, items.id DESC LIMIT ?`,
 		}
 	}
 
-	itemDetails := []*ItemDetail{}
+	itemDetails := []*ItemDetail
 	wg := sync.WaitGroup{}
 	for rows.Next() {
 		item := Item{}
