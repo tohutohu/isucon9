@@ -421,7 +421,7 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 	userMapMux.RUnlock()
 
 	userMapMux.Lock()
-	defer userMapMux.Unlock
+	defer userMapMux.Unlock()
 	err = sqlx.Get(q, &user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return userSimple, err
@@ -526,7 +526,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userMapMux.Lock()
-	defer userMapMux.UnLock()
+	defer userMapMux.Unlock()
 
 	userMap = make(map[int64]*User)
 	userArr := []*User{}
@@ -541,7 +541,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	for _, user := range userArr {
 		userMap[user.ID] = user
 	}
-	
+
 	res := resInitialize{
 		// キャンペーン実施時には還元率の設定を返す。詳しくはマニュアルを参照のこと。
 		Campaign: 0,
