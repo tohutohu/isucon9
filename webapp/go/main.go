@@ -2052,7 +2052,7 @@ func postComplete(w http.ResponseWriter, r *http.Request) {
 			ReserveID: shipping.ReserveID,
 		})
 		wg.Done()
-	}
+	}()
 	_, err = tx.Exec("UPDATE `shippings` SET `status` = ?, `updated_at` = ? WHERE `transaction_evidence_id` = ?",
 		ShippingsStatusDone,
 		time.Now(),
