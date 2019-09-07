@@ -1116,7 +1116,8 @@ ORDER BY created_at DESC, items.id DESC LIMIT ?`,
 		}
 	}
 
-	itemDetails := []ItemDetail{}
+	itemDetails := []*ItemDetail{}
+	wg := sync.WaitGroup{}
 	for rows.Next() {
 		item := Item{}
 		teID := sql.NullInt64{}
@@ -1153,7 +1154,7 @@ ORDER BY created_at DESC, items.id DESC LIMIT ?`,
 			return
 		}
 
-		itemDetail := ItemDetail{
+		itemDetail := &ItemDetail{
 			ID:       item.ID,
 			SellerID: item.SellerID,
 			Seller:   &seller,
@@ -1186,22 +1187,27 @@ ORDER BY created_at DESC, items.id DESC LIMIT ?`,
 			teIDValue := teID.Int64
 			teStatusValue := teStatus.String
 			reserveIDValue := reserveID.String
-			ssr, err := APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
-				ReserveID: reserveIDValue,
-			})
-			if err != nil {
-				log.Print(err)
-				outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
-				return
-			}
-
 			itemDetail.TransactionEvidenceID = teIDValue
 			itemDetail.TransactionEvidenceStatus = teStatusValue
-			itemDetail.ShippingStatus = ssr.Status
 
+			wg.Add(1)
+			go func() {
+				ssr, err := APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
+					ReserveID: reserveIDValue,
+				})
+				if err != nil {
+					log.Print(err)
+					outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
+					return
+				}
+
+				itemDetail.ShippingStatus = ssr.Status
+				wg.Done()
+			}()
 		}
 		itemDetails = append(itemDetails, itemDetail)
 	}
+	wg.Wait()
 
 	hasNext := false
 	if len(itemDetails) > TransactionsPerPage {
