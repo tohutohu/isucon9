@@ -473,7 +473,7 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 	return userSimple, err
 }
 
-func getUserImutableFromRequest(r *http.Request) (user User, errCode int, errMsg string) {
+func getUserImutableFromRequest(r *http.Request) (user *User, errCode int, errMsg string) {
 	session := getSession(r)
 	userID, ok := session.Values["user_id"]
 	if !ok {
@@ -486,7 +486,7 @@ func getUserImutableFromRequest(r *http.Request) (user User, errCode int, errMsg
 	}
 	userMapMux.RUnlock()
 
-	err = sqlx.Get(q, user, "SELECT * FROM `users` WHERE `id` = ?", userID)
+	err = dbx.Get(user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return user, http.StatusInternalServerError, err.Error()
 	}
