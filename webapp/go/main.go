@@ -926,7 +926,7 @@ FROM
 LEFT JOIN 
 	(
 		SELECT 
-			id,
+			transaction_evidences.id,
 			transaction_evidences.item_id, 
 			transaction_evidences.status, 
 			shippings.reserve_id  
@@ -975,7 +975,7 @@ FROM
 LEFT JOIN 
 	(
 		SELECT 
-			id,
+			transaction_evidences.id,
 			transaction_evidences.item_id, 
 			transaction_evidences.status, 
 			shippings.reserve_id  
