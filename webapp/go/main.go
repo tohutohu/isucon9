@@ -486,7 +486,7 @@ func getUserImutableFromRequest(r *http.Request) (user *User, errCode int, errMs
 	}
 	userMapMux.RUnlock()
 
-	err = dbx.Get(user, "SELECT * FROM `users` WHERE `id` = ?", userID)
+	err := dbx.Get(user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return user, http.StatusInternalServerError, err.Error()
 	}
