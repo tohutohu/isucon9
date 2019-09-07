@@ -19,8 +19,6 @@ import (
 	"syscall"
 	"time"
 
-	_ "net/http/pprof"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
@@ -317,10 +315,6 @@ func main() {
 	if password == "" {
 		password = "isucari"
 	}
-
-	go func() {
-		log.Println(http.ListenAndServe("0.0.0.0:6060", nil))
-	}()
 
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local",
