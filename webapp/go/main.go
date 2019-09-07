@@ -349,9 +349,6 @@ func main() {
 		}
 	}
 
-	userMapMux.Lock()
-	defer userMapMux.Unlock()
-
 	userMap = make(map[int64]*User)
 	userArr := []*User{}
 	err = dbx.Select(&userArr, "SELECT * FROM users")
