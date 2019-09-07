@@ -1798,7 +1798,7 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = ioutil.WriteFile(fmt.Sprintf("../public/transactions/%d.png"), img, 0644)
+	err = ioutil.WriteFile(fmt.Sprintf("../public/transactions/%d.png", transactionEvidence.ID), img, 0644)
 	if err != nil {
 		log.Print(err)
 		outputErrorMsg(w, http.StatusInternalServerError, "write file error")
