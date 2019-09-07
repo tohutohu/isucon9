@@ -9,12 +9,15 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 
 	_ "net/http/pprof"
@@ -373,7 +376,7 @@ func main() {
 	mux.HandleFunc(pat.Get("/users/setting"), getIndex)
 	// Assets
 	mux.Handle(pat.Get("/*"), http.FileServer(http.Dir("../public")))
-	if os.Getenv("UNIX") !== "" {
+	if os.Getenv("UNIX") != "" {
 		listener, err := net.Listen("unix", "/var/run/gopher/go.sock")
 		if err != nil {
 			log.Fatalf("error: %v", err)
@@ -394,15 +397,15 @@ func main() {
 }
 
 func shutdown(listener net.Listener) {
-    c := make(chan os.Signal, 2)
-    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-    go func() {
-        s := <-c
-        if err := listener.Close(); err != nil {
-            log.Printf("error: %v", err)
-        }
-        os.Exit(1)
-    }()
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		s := <-c
+		if err := listener.Close(); err != nil {
+			log.Printf("error: %v", err)
+		}
+		os.Exit(1)
+	}()
 }
 
 func getSession(r *http.Request) *sessions.Session {
