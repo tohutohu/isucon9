@@ -2092,6 +2092,7 @@ func postComplete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	wg.Wait()
 	if ssrErr != nil {
 		log.Print(ssrErr)
 		outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
