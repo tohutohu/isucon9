@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -383,6 +384,11 @@ func getCSRFToken(r *http.Request) string {
 	return csrfToken.(string)
 }
 
+var (
+	userMap    = make(map[int64]*User)
+	userMapMux = sync.RWMutex{}
+)
+
 func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 	session := getSession(r)
 	userID, ok := session.Values["user_id"]
@@ -404,10 +410,23 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 
 func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err error) {
 	user := User{}
+	userMapMux.RLock()
+	if val, ok := userMap[userID]; ok {
+		userSimple.ID = val.ID
+		userSimple.AccountName = val.AccountName
+		userSimple.NumSellItems = val.NumSellItems
+		userMapMux.RUnlock()
+		return userSimple, err
+	}
+	userMapMux.RUnlock()
+
+	userMapMux.Lock()
+	defer userMapMux.Unlock
 	err = sqlx.Get(q, &user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return userSimple, err
 	}
+	userMap[user.ID] = &user
 	userSimple.ID = user.ID
 	userSimple.AccountName = user.AccountName
 	userSimple.NumSellItems = user.NumSellItems
@@ -484,26 +503,6 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// _, err = dbx.Exec(
-	// 	"INSERT INTO `configs` (`name`, `val`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `val` = VALUES(`val`)",
-	// 	"payment_service_url",
-	// 	ri.PaymentServiceURL,
-	// )
-	// if err != nil {
-	// 	log.Print(err)
-	// 	outputErrorMsg(w, http.StatusInternalServerError, "db error")
-	// 	return
-	// }
-	// _, err = dbx.Exec(
-	// 	"INSERT INTO `configs` (`name`, `val`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `val` = VALUES(`val`)",
-	// 	"shipment_service_url",
-	// 	ri.ShipmentServiceURL,
-	// )
-	// if err != nil {
-	// 	log.Print(err)
-	// 	outputErrorMsg(w, http.StatusInternalServerError, "db error")
-	// 	return
-	// }
 	config["payment_service_url"] = ri.PaymentServiceURL
 	config["shipment_service_url"] = ri.ShipmentServiceURL
 
@@ -526,6 +525,23 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	userMapMux.Lock()
+	defer userMapMux.UnLock()
+
+	userMap = make(map[int64]*User)
+	userArr := []*User{}
+	err = dbx.Select(&userArr, "SELECT * FROM users")
+
+	if err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		return
+	}
+
+	for _, user := range userArr {
+		userMap[user.ID] = user
+	}
+	
 	res := resInitialize{
 		// キャンペーン実施時には還元率の設定を返す。詳しくはマニュアルを参照のこと。
 		Campaign: 0,
