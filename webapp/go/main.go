@@ -337,6 +337,40 @@ func main() {
 	}
 	defer dbx.Close()
 
+	categoryList = make(map[int]*Category)
+	cateArr := []*Category{}
+	err = dbx.Select(&cateArr, "SELECT * FROM categories")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	for _, cate := range cateArr {
+		categoryList[cate.ID] = cate
+	}
+
+	for _, cate := range categoryList {
+		if cate.ParentID != 0 {
+			cate.ParentCategoryName = categoryList[cate.ParentID].CategoryName
+		}
+	}
+
+	userMapMux.Lock()
+	defer userMapMux.Unlock()
+
+	userMap = make(map[int64]*User)
+	userArr := []*User{}
+	err = dbx.Select(&userArr, "SELECT * FROM users")
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	for _, user := range userArr {
+		userMap[user.ID] = user
+	}
+
 	mux := goji.NewMux()
 
 	// API
