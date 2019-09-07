@@ -966,7 +966,6 @@ ORDER BY
 		if err != nil {
 			log.Print(err)
 			outputErrorMsg(w, http.StatusInternalServerError, "db error")
-			tx.Rollback()
 			return
 		}
 	} else {
@@ -1010,7 +1009,6 @@ ORDER BY created_at DESC, items.id DESC LIMIT ?`,
 		if err != nil {
 			log.Print(err)
 			outputErrorMsg(w, http.StatusInternalServerError, "db error")
-			tx.Rollback()
 			return
 		}
 	}
@@ -1091,7 +1089,6 @@ ORDER BY created_at DESC, items.id DESC LIMIT ?`,
 			if err != nil {
 				log.Print(err)
 				outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
-				tx.Rollback()
 				return
 			}
 
