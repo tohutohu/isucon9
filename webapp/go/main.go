@@ -403,6 +403,12 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 		return user, http.StatusNotFound, "no session"
 	}
 
+	userMapMux.RLock()
+	if val, ok := userMap[userID]; ok {
+		return *val, err
+	}
+	userMapMux.RUnlock()
+
 	err := dbx.Get(&user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err == sql.ErrNoRows {
 		return user, http.StatusNotFound, "user not found"
@@ -411,6 +417,9 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 		log.Print(err)
 		return user, http.StatusInternalServerError, "db error"
 	}
+	userMapMux.Lock()
+	defer userMapMux.Unlock()
+	userMap[userID] = &user
 
 	return user, http.StatusOK, ""
 }
@@ -551,7 +560,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 
 	res := resInitialize{
 		// キャンペーン実施時には還元率の設定を返す。詳しくはマニュアルを参照のこと。
-		Campaign: 3,
+		Campaign: 4,
 		// 実装言語を返す
 		Language: "Go",
 	}

@@ -83,11 +83,11 @@ before:
 	@if [ -f $(NGX_LOG) ]; then \
 		sudo mv -f $(NGX_LOG) ~/logs/$(when)/ ; \
 	fi
-	@if [ -f $(MYSQL_LOG) ]; then \
-		sudo mv -f $(MYSQL_LOG) ~/logs/$(when)/ ; \
-	fi
+	# @if [ -f $(MYSQL_LOG) ]; then \
+	# 	sudo mv -f $(MYSQL_LOG) ~/logs/$(when)/ ; \
+	# fi
 	sudo systemctl restart nginx
-	sudo systemctl restart mysql
+	# sudo systemctl restart mysql
 
 .PHONY: slow
 slow: 
