@@ -207,8 +207,8 @@ type resUserItems struct {
 }
 
 type resTransactions struct {
-	HasNext bool         `json:"has_next"`
-	Items   []ItemDetail `json:"items"`
+	HasNext bool          `json:"has_next"`
+	Items   []*ItemDetail `json:"items"`
 }
 
 type reqRegister struct {
@@ -1116,7 +1116,7 @@ ORDER BY created_at DESC, items.id DESC LIMIT ?`,
 		}
 	}
 
-	itemDetails := []*ItemDetail
+	itemDetails := []*ItemDetail{}
 	wg := sync.WaitGroup{}
 	for rows.Next() {
 		item := Item{}
