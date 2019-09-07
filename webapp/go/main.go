@@ -907,40 +907,40 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 	var rows *sqlx.Rows
 	if itemID > 0 && createdAt > 0 {
 		// paging
-		rows, err = tx.Queryx(
+		rows, err = tx.Query(
 			`SELECT 
-				items.id, 
-				items.seller_id, 
-				items.status,
-				items.name,
-				items.description,
-				items.image_name,
-				items.category_id,
-				items.created_at,
-				items.buyer_id,
-				te_ship.id as te_id,
-				te_ship.reserve_id,
-				te_ship.status as te_status
-			FROM 
-				items 
-			LEFT JOIN 
-				(
-					SELECT 
-						id,
-						transaction_evidences.item_id, 
-						transaction_evidences.status, 
-						shippings.reserve_id  
-					FROM 
-						transaction_evidences 
-					RIGHT JOIN 
-						shippings 
-					ON transaction_evidences.id = shippings.transaction_evidence_id
-				) AS te_ship ON items.id = te_ship.item_id 
-			WHERE 
-				(seller_id = ? OR buyer_id = ?) 
-				AND (created_at < ?  OR (created_at <= ? AND id < ?)) 
-			ORDER BY 
-				created_at DESC, id DESC LIMIT ?`,
+	items.id, 
+	items.seller_id, 
+	items.status,
+	items.name,
+	items.description,
+	items.image_name,
+	items.category_id,
+	items.created_at,
+	items.buyer_id,
+	te_ship.id as te_id,
+	te_ship.reserve_id,
+	te_ship.status as te_status
+FROM 
+	items 
+LEFT JOIN 
+	(
+		SELECT 
+			id,
+			transaction_evidences.item_id, 
+			transaction_evidences.status, 
+			shippings.reserve_id  
+		FROM 
+			transaction_evidences 
+		RIGHT JOIN 
+			shippings 
+		ON transaction_evidences.id = shippings.transaction_evidence_id
+	) AS te_ship ON items.id = te_ship.item_id 
+WHERE 
+	(seller_id = ? OR buyer_id = ?) 
+	AND (created_at < ?  OR (created_at <= ? AND id < ?)) 
+ORDER BY 
+	created_at DESC, id DESC LIMIT ?`,
 			user.ID,
 			user.ID,
 			time.Unix(createdAt, 0),
@@ -956,38 +956,38 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// 1st page
-		rows, err = tx.Queryx(
+		rows, err = tx.Query(
 			`SELECT 
-				items.id, 
-				items.seller_id, 
-				items.status,
-				items.name,
-				items.description,
-				items.image_name,
-				items.category_id,
-				items.created_at,
-				items.buyer_id,
-				te_ship.id as te_id,
-				te_ship.reserve_id,
-				te_ship.status as te_status
-			FROM 
-				items 
-			LEFT JOIN 
-				(
-					SELECT 
-						id,
-						transaction_evidences.item_id, 
-						transaction_evidences.status, 
-						shippings.reserve_id  
-					FROM 
-						transaction_evidences 
-					RIGHT JOIN 
-						shippings 
-					ON transaction_evidences.id = shippings.transaction_evidence_id
-				) AS te_ship ON items.id = te_ship.item_id 
-			WHERE 
-				(seller_id = ? OR buyer_id = ?) 
-			ORDER BY created_at DESC, id DESC LIMIT ?`,
+	items.id, 
+	items.seller_id, 
+	items.status,
+	items.name,
+	items.description,
+	items.image_name,
+	items.category_id,
+	items.created_at,
+	items.buyer_id,
+	te_ship.id as te_id,
+	te_ship.reserve_id,
+	te_ship.status as te_status
+FROM 
+	items 
+LEFT JOIN 
+	(
+		SELECT 
+			id,
+			transaction_evidences.item_id, 
+			transaction_evidences.status, 
+			shippings.reserve_id  
+		FROM 
+			transaction_evidences 
+		RIGHT JOIN 
+			shippings 
+		ON transaction_evidences.id = shippings.transaction_evidence_id
+	) AS te_ship ON items.id = te_ship.item_id 
+WHERE 
+	(seller_id = ? OR buyer_id = ?) 
+ORDER BY created_at DESC, id DESC LIMIT ?`,
 			user.ID,
 			user.ID,
 			TransactionsPerPage+1,
