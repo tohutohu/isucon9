@@ -70,6 +70,13 @@ type Config struct {
 	Val  string `json:"val" db:"val"`
 }
 
+var (
+	config = map[string]string{
+		"payment_service_url":  DefaultPaymentServiceURL,
+		"shipment_service_url": DefaultShipmentServiceURL,
+	}
+)
+
 type User struct {
 	ID             int64     `json:"id" db:"id"`
 	AccountName    string    `json:"account_name" db:"account_name"`
@@ -422,7 +429,7 @@ func getCategoryByID(q sqlx.Queryer, categoryID int) (category Category, err err
 }
 
 func getConfigByName(name string) (string, error) {
-	return "", nil
+	return config[name], nil
 	// config := Config{}
 	// err := dbx.Get(&config, "SELECT * FROM `configs` WHERE `name` = ?", name)
 	// if err == sql.ErrNoRows {
@@ -477,26 +484,28 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = dbx.Exec(
-		"INSERT INTO `configs` (`name`, `val`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `val` = VALUES(`val`)",
-		"payment_service_url",
-		ri.PaymentServiceURL,
-	)
-	if err != nil {
-		log.Print(err)
-		outputErrorMsg(w, http.StatusInternalServerError, "db error")
-		return
-	}
-	_, err = dbx.Exec(
-		"INSERT INTO `configs` (`name`, `val`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `val` = VALUES(`val`)",
-		"shipment_service_url",
-		ri.ShipmentServiceURL,
-	)
-	if err != nil {
-		log.Print(err)
-		outputErrorMsg(w, http.StatusInternalServerError, "db error")
-		return
-	}
+	// _, err = dbx.Exec(
+	// 	"INSERT INTO `configs` (`name`, `val`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `val` = VALUES(`val`)",
+	// 	"payment_service_url",
+	// 	ri.PaymentServiceURL,
+	// )
+	// if err != nil {
+	// 	log.Print(err)
+	// 	outputErrorMsg(w, http.StatusInternalServerError, "db error")
+	// 	return
+	// }
+	// _, err = dbx.Exec(
+	// 	"INSERT INTO `configs` (`name`, `val`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `val` = VALUES(`val`)",
+	// 	"shipment_service_url",
+	// 	ri.ShipmentServiceURL,
+	// )
+	// if err != nil {
+	// 	log.Print(err)
+	// 	outputErrorMsg(w, http.StatusInternalServerError, "db error")
+	// 	return
+	// }
+	config["payment_service_url"] = ri.PaymentServiceURL
+	config["shipment_service_url"] = ri.ShipmentServiceURL
 
 	categoryList = make(map[int]*Category)
 	cateArr := []*Category{}
