@@ -419,7 +419,7 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 	}
 	userMapMux.Lock()
 	defer userMapMux.Unlock()
-	userMap[userID] = &user
+	userMap[userID.(int64)] = &user
 
 	return user, http.StatusOK, ""
 }
