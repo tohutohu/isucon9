@@ -2445,7 +2445,7 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), BcryptCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 4)
 	if err != nil {
 		log.Print(err)
 
