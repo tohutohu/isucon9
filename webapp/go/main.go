@@ -2043,23 +2043,16 @@ func postComplete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ssr, err := APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
-		ReserveID: shipping.ReserveID,
-	})
-	if err != nil {
-		log.Print(err)
-		outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
-		tx.Rollback()
-
-		return
+	var ssr *APIShipmentStatusRes
+	var ssrErr error
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		ssr, ssrErr = APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
+			ReserveID: shipping.ReserveID,
+		})
+		wg.Done()
 	}
-
-	if !(ssr.Status == ShippingsStatusDone) {
-		outputErrorMsg(w, http.StatusBadRequest, "shipment service側で配送完了になっていません")
-		tx.Rollback()
-		return
-	}
-
 	_, err = tx.Exec("UPDATE `shippings` SET `status` = ?, `updated_at` = ? WHERE `transaction_evidence_id` = ?",
 		ShippingsStatusDone,
 		time.Now(),
@@ -2095,6 +2088,19 @@ func postComplete(w http.ResponseWriter, r *http.Request) {
 		log.Print(err)
 
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		tx.Rollback()
+		return
+	}
+
+	if ssrErr != nil {
+		log.Print(ssrErr)
+		outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
+		tx.Rollback()
+		return
+	}
+
+	if !(ssr.Status == ShippingsStatusDone) {
+		outputErrorMsg(w, http.StatusBadRequest, "shipment service側で配送完了になっていません")
 		tx.Rollback()
 		return
 	}
