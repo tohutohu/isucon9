@@ -1014,6 +1014,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 			&item.Description,
 			&item.ImageName,
 			&item.CategoryID,
+			&item.CreatedAt,
 			&item.BuyerID,
 			&teID,
 			&reserveID,
