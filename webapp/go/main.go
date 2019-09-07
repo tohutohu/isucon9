@@ -1060,7 +1060,7 @@ ORDER BY created_at DESC, id DESC LIMIT ?`,
 		}
 
 		if item.BuyerID != 0 {
-			buyer, err := getUserSimpleByID(, item.BuyerID)
+			buyer, err := getUserSimpleByID(tx, item.BuyerID)
 			if err != nil {
 				outputErrorMsg(w, http.StatusNotFound, "buyer not found")
 				tx.Rollback()
