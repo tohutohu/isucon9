@@ -461,23 +461,65 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 
 func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err error) {
 	user := User{}
-	userMapMux.RLock()
-	if val, ok := userMap[userID]; ok {
-		userSimple.ID = val.ID
-		userSimple.AccountName = val.AccountName
-		userMapMux.RUnlock()
-		return userSimple, err
-	}
-	userMapMux.RUnlock()
 
 	err = sqlx.Get(q, &user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return userSimple, err
 	}
 	userMapMux.Lock()
-	defer userMapMux.Unlock()
-	userMap[user.ID] = &user
 	userSimple.ID = user.ID
+	userSimple.NumSellItems = user.NumSellItems
+	userSimple.AccountName = user.AccountName
+	return userSimple, err
+}
+
+func getUserImutableFromRequest(r *http.Request) (user User, errCode int, errMsg string) {
+	session := getSession(r)
+	userID, ok := session.Values["user_id"]
+	if !ok {
+		return user, http.StatusNotFound, "no session"
+	}
+
+	userMapMux.RLock()
+	if val, ok := userMap[userID.(int64)]; ok {
+		return val, http.StatusOK, ""
+	}
+	userMapMux.RUnlock()
+
+	err = sqlx.Get(q, user, "SELECT * FROM `users` WHERE `id` = ?", userID)
+	if err != nil {
+		return user, http.StatusInternalServerError, err.Error()
+	}
+	userMapMux.Lock()
+	defer userMapMux.Unlock()
+	userMap[user.ID] = user
+	return user, http.StatusInternalServerError, err.Error()
+}
+
+func getUserImutable(userID int64) (user *User, err error) {
+	userMapMux.RLock()
+	if val, ok := userMap[userID]; ok {
+		return val, err
+	}
+	userMapMux.RUnlock()
+
+	err = dbx.Get(user, "SELECT * FROM `users` WHERE `id` = ?", userID)
+	if err != nil {
+		return user, err
+	}
+	userMapMux.Lock()
+	defer userMapMux.Unlock()
+	userMap[user.ID] = user
+	return user, err
+}
+
+func getUserSimpleImutableByID(userID int64) (userSimple UserSimple, err error) {
+	user, err := getUserImutable(userID)
+	if err != nil {
+		return userSimple, err
+	}
+	userSimple.ID = user.ID
+	userSimple.NumSellItems = user.NumSellItems
 	userSimple.AccountName = user.AccountName
 	return userSimple, err
 }
@@ -1507,7 +1549,7 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	buyer, errCode, errMsg := getUser(r)
+	buyer, errCode, errMsg := getUserImutableFromRequest(r)
 	if errMsg != "" {
 		outputErrorMsg(w, errCode, errMsg)
 		return
