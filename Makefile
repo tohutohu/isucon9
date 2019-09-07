@@ -1,3 +1,4 @@
+export GO111MODULE=on
 DB_HOST:=127.0.0.1
 DB_PORT:=3306
 DB_USER:=isucari
@@ -16,9 +17,9 @@ SLACKRAW:=slackcat --channel general
 
 PPROF:=go tool pprof -png -output pprof.png http://localhost:6060/debug/pprof/profile
 
-PROJECT_ROOT:=/home/isucon/torb
-BUILD_DIR:=/home/isucon/torb/webapp/go
-BIN_NAME:=torb
+PROJECT_ROOT:=/home/isucon/isucari
+BUILD_DIR:=/home/isucon/isucari/webapp/go
+BIN_NAME:=isucari
 
 CA:=-o /dev/null -s -w "%{http_code}\n"
 
@@ -36,7 +37,7 @@ deps:
 .PHONY: build
 build:
 	cd $(BUILD_DIR); \
-	go build -o $(BIN_NAME) src/torb/app.go
+	go build -o $(BIN_NAME)
 	#TODO
 
 .PHONY: restart
