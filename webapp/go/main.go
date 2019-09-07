@@ -564,7 +564,9 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	b, _ := json.Marshal(ri)
 	req, err := http.NewRequest(http.MethodPost, "http://172.24.139.27/light", bytes.NewBuffer(b))
 	if err != nil {
-		return nil, err
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 
