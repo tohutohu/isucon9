@@ -902,7 +902,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	//tx := dbx.MustBegin()
+	tx := dbx.MustBegin()
 	// items := []Item{}
 	var rows *sqlx.Rows
 	if itemID > 0 && createdAt > 0 {
@@ -1060,7 +1060,7 @@ ORDER BY created_at DESC, id DESC LIMIT ?`,
 		}
 
 		if item.BuyerID != 0 {
-			buyer, err := getUserSimpleByID(tx, item.BuyerID)
+			buyer, err := getUserSimpleByID(, item.BuyerID)
 			if err != nil {
 				outputErrorMsg(w, http.StatusNotFound, "buyer not found")
 				tx.Rollback()
