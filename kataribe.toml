@@ -87,6 +87,10 @@ name = "upload/.jpg"
 regexp = '^(GET|HEAD) /new_items.json'
 name = "new_items.json"
 
+[[bundle]]
+regexp = '^(GET|HEAD) /transactions/[a-z0-9]+.png'
+name = "transactions/.png"
+
 # You can replace the part of urls which matched to your regular expressions.
 # For overview of regexp syntax: https://golang.org/pkg/regexp/syntax/
 [[replace]]
