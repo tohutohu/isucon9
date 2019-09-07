@@ -590,6 +590,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 }
 
 func postInitializeOther(w http.ResponseWriter, r *http.Request) {
+	log.Print("OTHER")
 	ri := reqInitialize{}
 
 	err := json.NewDecoder(r.Body).Decode(&ri)
@@ -597,6 +598,7 @@ func postInitializeOther(w http.ResponseWriter, r *http.Request) {
 		outputErrorMsg(w, http.StatusBadRequest, "json decode error")
 		return
 	}
+	log.Print(ri)
 
 	config["payment_service_url"] = ri.PaymentServiceURL
 	config["shipment_service_url"] = ri.ShipmentServiceURL
