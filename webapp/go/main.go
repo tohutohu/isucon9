@@ -907,7 +907,7 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 	var rows *sqlx.Rows
 	if itemID > 0 && createdAt > 0 {
 		// paging
-		rows, err = tx.Query(
+		rows, err = tx.Queryx(
 			`SELECT 
 	items.id, 
 	items.seller_id, 
@@ -956,7 +956,7 @@ ORDER BY
 		}
 	} else {
 		// 1st page
-		rows, err = tx.Query(
+		rows, err = tx.Queryx(
 			`SELECT 
 	items.id, 
 	items.seller_id, 
